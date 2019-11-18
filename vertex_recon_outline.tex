@@ -12,7 +12,7 @@
 \setlength{\parindent}{0em}
 
 
-\title{Self-calibration in liquid scintillator detectors}  
+\title{Reconstruction based on Self-calibration in liquid scintillator detectors}  
 \author{Dou Wei, Jianfeng Zhou}  
 \date{\today}
 
@@ -60,23 +60,24 @@
 	\begin{tikzpicture}[font={\sf \small}]
 	\def \smbwd{2cm}
 
-%	\node (step1) at (0,0) [draw, terminal,minimum width=\smbwd, minimum height=0.5cm] {Weighted Average};  
-	\node (step2) at (0,-1.5) [draw, terminal,minimum width=\smbwd,minimum height=1cm] {Get initial value $\Theta^{[0]}$, $\tau^{[0]}$}; 
-	\node (step3) at (0,-5.5) [draw, terminal, minimum width=\smbwd, minimum height=1cm] {Is k+1-th iteration converge?}; 
-	\node (step4) at (-3.5,-3.5) [draw, terminal, minimum width=\smbwd, minimum height=1cm] {E step, input $\tau^{[k]}$ get $\Theta^{[k+1]}$};
-	\node (step5) at (3.5,-3.5) [draw, terminal, minimum width=\smbwd, minimum height=1cm] {M step, input $\Theta^{[k+1]}$ get $\tau^{[k+1]}$};
-%	\coordinate (point1) at (0,-6.75);
-	\node (step6) at (0,-7.5) [draw, terminal,minimum width=\smbwd,minimum height=0.5cm] {End}; 
+	\node (step1) at (0,0) [draw, terminal,minimum width=\smbwd, minimum height=0.5cm] {Initial guess of $E, \vec{x}, \tau_d$};  
+	\node (step2) at (0,-1.5) [draw, terminal,minimum width=\smbwd,minimum height=1cm] {M-step 1}; 
+	\node (step3) at (0,-3) [draw, terminal, minimum width=\smbwd, minimum height=1cm] {M-step 2};
+	\node (step4) at (0,-4.5) [draw, terminal, minimum width=\smbwd, minimum height=1cm] {E-step};
+	\tikzstyle{decision} = [diamond, aspect = 2.5, text centered, draw=black ]
+	\node (step5) at (0,-6) [decision]{converge?}; 
+	\node (step6) at (3.5,-4.5) [draw, terminal, minimum width=\smbwd, minimum height=1cm] {Iteration + 1};
+	\node (step7) at (0,-7.75) [draw, terminal,minimum width=\smbwd,minimum height=0.5cm] {Output $E, \vec{x}, \tau_d$}; 
 
-
-%	\draw[->] (step1) -- node[right]{$\vec{x}_{col}$} (step2) ;
-	\draw[->] (step2) -- node[right]{} (step4);
-	\draw[->] (step5) -- node[above]{} (step3);
-	\draw[->] (step3) -- node[right]{no} (step4);
-	\draw[->] (step4) -- node[right]{}(step5);
-	\draw[->] (step3) -- node[above]{yes}(step6);
-\end{tikzpicture}
-	\caption{The flow chart of the EM reconstruction}
+	\draw[->] (step1) -- node[right]{} (step2) ;
+	\draw[->] (step2) -- node[right]{} (step3);
+	\draw[->] (step6) |- node[above]{} (step2);
+	\draw[->] (step3) -- node[right]{} (step4);
+	\draw[->] (step4) -- node[right]{} (step5);
+	\draw[->] (step5) -| node[below]{no}(step6);
+	\draw[->] (step5) -- node[right]{yes}(step7);
+	\end{tikzpicture}
+	\caption{The flow chart of the reconstruction}
 	\label{fig:1}
 	
 \end{figure}
@@ -103,7 +104,10 @@
 		\tau_d = \arg_{\tau_d}\max{\sum_i \log p_i(t)}
 	\end{equation}
 
-\subsection{M-step to find the best fit vertex}
+\subsection{M-step to find the best fit vertex and $\tau_d$}
+	
+\subsubsection{Traditional algorithm based on charge information}
+
 	\par Traditional reconstruction algorithm is applied in M-step. The likelihood function can be resolved into 2 parts
 	
 	\begin{equation}
@@ -129,8 +133,8 @@
 	
 	\par $i$ is the index of all PMTs and $i'$ only includes fired PMTs.   
 	\par The combined likelihood includes vertex and unknown dependence, which will be reconstructed by maximize the likelihood, and we will derivate detailed form from abstract to a calculative one in the following section.
-	
-\subsubsection{Spatial-based algorithm based on charge information}
+
+
 \par The number of photon electrons received by PMT is approximately a Poisson distribution.
 	
 	\begin{equation}
@@ -153,8 +157,6 @@
 	\numberwithin{equation}{section}
 	\log L = \sum_{i=1}^N \log p_{i,s} \{{\textbf x},E;n_{i}\}
 	\end{equation}
-	
-	\subsubsection{Time-based algorithm based on time information}
 
 	\par The simplified lifetime of a scintillator photon can be generalized in 4 steps (if no scattering): 
 	\par 1. At $t_0$, the particle at vertex $\textbf {x}$ begin the travel like a point source. 
@@ -184,13 +186,13 @@
 
 	\begin{equation}
 		\numberwithin{equation}{section}
-		\log L = \sum_{j=1}^n \log p_{j,t}\{{\textbf x},t_{j};U(t)\}
+		\log L = \sum_{j=1}^n \log p_{j,t}\{{\textbf x}; U(t), t_{j}\}
 	\end{equation}
+\subsubsection{M-step to avoid local minimum and reconstruct $\tau_d$ }
+\par Since $U(t)$ is relative to $\tau_d$ and TTS, the distribution can be parameterized by reconstructing $\tau_d$. $\tau_d$ is believed to determined by initial energy. 
+\par M-step plus utilize the result in M-step, in other words, the energy and vertex is known, but the unknown distribution such as decay time constant is fit as pending. We use log likelihood 
 
-\subsection{E-step to shape the best fit unknown distribution and the added constraints}
-\subsubsection{The traditional likelihood function in E-step}
-\par E-step utilize the result in M-step, in other words, the energy and vertex is known, but the unknown distribution such as decay time constant is fit as pending.
-\par since the decay time constant is only include in time information parts, the charge information can be omitted.
+
 	\begin{equation}
 	\numberwithin{equation}{section}
 		\log L\{\tau|x,E\} = \log \prod_{i} p^*_i = \log p_{j,t}\{{\textbf x},t_{j};S(t)\}
@@ -200,13 +202,16 @@
 	\numberwithin{equation}{section}
 		\tau = \arg_\tau{\max\{\log L\{\tau\}\}}
 	\end{equation}
-\par The best $\tau$ will be a fixed parameter in next M-step.
+\par The best $\tau$ will be a fixed parameter in next E-step.
+\par Since the analytical form of the uncertainty is quite complex, and the performance of the optimization do not play well in high dimension, we divided the likelihood into 2 parts. The comparison will be explained further in discussion.
+
+\subsection{E-step to shape the best fit unknown distribution and the added constraints}
 \subsubsection{The problems encountered in traditional likelihood}
 \par However, we believe the $\tau$ is relative to energy $E$, which means the $\tau$ should have the same performance with the same energy$E$, indicate we must add a constraint to it, Using likelihood 
 $$ \tau = \arg_\tau\max\sum_{same E}log L{\{\tau|E\}} $$
 but the energy always coupling with big uncertainty, lead to big difficulties to selected event, to simplified
 
-\subsubsection{The variant M-step using cluster}
+\subsubsection{The variant E-step using cluster}
 \par A cluster algorithm will be used in M-step to update parameters. Our cluster focus on the shape-dominated parameter $\tau(E)$ and energy $E$, see figure \ref{fig:2}
 
 	\begin{figure}[h]
