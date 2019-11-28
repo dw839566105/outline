@@ -1,8 +1,8 @@
-.PHONY: all, clean
-all: outline.tex
+.PHONY: all
+all: output clean
+output: outline.tex
 	pdflatex outline.tex
-clean: *.aux, *.log
+clean:
 	rm *.aux
 	rm *.log
-	rm *.gz
 	rm *.out
