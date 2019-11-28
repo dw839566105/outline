@@ -23,86 +23,52 @@
 \section{Introduction}
 \subsection{Calibration of scintillator detector may bring extra challenges}
 \subsubsection{The advantages of scintillator detector}
-\par Scintillator is a good candidate for neutrino observation for its better energy resolution and low energy threshold. However, to calibrate a scintillation detector is a hard work.
+1. Scintillator is a good candidate for neutrino observation for its better energy resolution and low energy threshold.
+2. However, to calibrate a scintillation detector is a hard work.
 \subsubsection{Why calibration is so difficult}
-\par 1. The calibration source need high purity, which adds high difficulties to the mechanical process and demand high cost. 2. It is hard to fix calibrate source in the detector, which may cause extra accident, either. 3. The structure of the calibration source may bring shadows which is different to the real situation, requiring more correction in simulation.
+1. The calibration source need high purity, which adds high difficulties to the mechanical process and demand high cost. 
+2. It is hard to fix calibrate source in the detector, which may cause extra accident, either. 
+3. The structure of the calibration source may bring shadows which is different to the real situation, requiring more correction in simulation.
 \subsubsection{The objective of this paper is to reconstruct with no calibration detector}
-\par 1.  We try to reconstruct the vertex and unknown structures if we have plenty of data without calibration. 2. If calibration is done, a cross check can be applied to reduce the error in measurement. 
+1.  We try to reconstruct the vertex and unknown structures if we have plenty of data without calibration.
+2.  If calibration is done, a cross check can be applied to reduce the error in measurement. 
 \subsection{The importance of reconstruction}
 \subsubsection{Why reconstruction is so important?}
-\par Reconstruction is necessary for reduce the background caused by PMT and supporting structures , raise the energy resolution and identify the particle type. 
+Reconstruction is necessary for:
+    \begin{itemize}
+	\item reduce the background caused by PMT and supporting structures
+	\item raise the energy resolution
+        \item identify the particle type
+    \end{itemize}
 \subsubsection{Who else has done that?}
-\par 1.Traditional reconstruction is a likelihood or divide detectors into many segment bins, such as Daya Bay. (How to reconstruct resolution by Borexino, SNO+, Daya Bay)\\
-\par 2. Machine learning has broadly applied in current physical experiments, such as neural networks. 3. EM algorithm is useful in estimating the unknown distribution. and been widely used in many aspects.
+1. Traditional reconstruction is a likelihood or divide detectors into many segment bins, careful calibration is needed
+2. Recntly Machine learning has broadly applied in current physical experiments, such as deep learning. Some physical infomation is hidden.
 
 \subsection{Highlight of this paper and purpose of this paper}
-\par This is the first series reconstruction without calibration. The main algorithm uses EM algorithm to reconstruct vertex and time profile. 	We use software JSAP based on ROOT system and GEANT4. and reconstruction.
-\par Section 2 shows the how EM algorithm reconstruct vertex and time profile in different steps. and E-step and M-step is section 2.3.1 and 2.3.2. Section 3 shows the simulation condition and reconstruction result. Section 4 shows the conclusion and discussion.
+1. This is the first series reconstruction without calibration in neutrino experiment. The main result provide a reconstruction of $\tau_d$ to future PID. We use software JSAP based on ROOT system and GEANT4.
 
-\section{EM Algorithms for Reconstruction}
-\subsection{Using EM iteration to raise the resolution}
-\subsubsection{How traditional EM algorithm update parameters}
-\par EM is useful in estimate unknown distribution. Each step maximize the likelihood use the parameters in last step.
+2. Section 2 shows the how likelihood algorithm works. Section 3 shows the simulation condition and reconstruction result. Section 4 shows the conclusion and discussion.
 
-	\begin{equation}
-	\numberwithin{equation}{section}
-		\begin{cases}
-		E-step: \tau^{[k+1]} = \arg\max_{\tau}L(\tau^{[k]},\Theta^{[k]};n_i, t_i)\\
-		M-step:\Theta^{[k+1]} = \arg\max_{\Theta}L(\tau^{[k+1]},\Theta^{[k]}; n_i, t_i)\\
-		\end{cases}
-	\end{equation}
-	
-\par We use M-step find the vertex that maximize the likelihood , for E-step, we add a little correction to make the estimation of the time profile more physical. which will be detailed described in subsection 2.1.3
-\par A flow chart to describe simplified EM process is shown in figure \ref{fig:1}
+\section{Reconstruction Algorithm}
+\subsection{Initial guess of the reconstrcted parameters}
+1. A swift esimation using pe information to estimate a rough energy and vertex. 
 
-\begin{figure}[htbp]
-	\centering
-	\begin{tikzpicture}[font={\sf \small}]
-	\def \smbwd{2cm}
+    \begin{equation}
+        \numberwithin{equation}{section}
+        \vec{x}_{ini} = \frac{\sum_{i=1}^N n_i\vec{x}_i}{\sum_{i=1}^N n_i}
+    \end{equation}
 
-	\node (step1) at (0,0) [draw, terminal,minimum width=\smbwd, minimum height=0.5cm] {Initial guess of $E, \vec{x}, \tau_d$};  
-	\node (step2) at (0,-1.5) [draw, terminal,minimum width=\smbwd,minimum height=1cm] {M-step 1}; 
-	\node (step3) at (0,-3) [draw, terminal, minimum width=\smbwd, minimum height=1cm] {M-step 2};
-	\node (step4) at (0,-4.5) [draw, terminal, minimum width=\smbwd, minimum height=1cm] {E-step};
-	\tikzstyle{decision} = [diamond, aspect = 2.5, text centered, draw=black ]
-	\node (step5) at (0,-6) [decision]{converge?}; 
-	\node (step6) at (3.5,-4.5) [draw, terminal, minimum width=\smbwd, minimum height=1cm] {Iteration + 1};
-	\node (step7) at (0,-7.75) [draw, terminal,minimum width=\smbwd,minimum height=0.5cm] {Output $E, \vec{x}, \tau_d$}; 
+2. Decay Time constant domain the time profile, assuming uncalibrated, energy dependent and particle dependent.
 
-	\draw[->] (step1) -- node[right]{} (step2) ;
-	\draw[->] (step2) -- node[right]{} (step3);
-	\draw[->] (step6) |- node[above]{} (step2);
-	\draw[->] (step3) -- node[right]{} (step4);
-	\draw[->] (step4) -- node[right]{} (step5);
-	\draw[->] (step5) -| node[below]{no}(step6);
-	\draw[->] (step5) -- node[right]{yes}(step7);
-	\end{tikzpicture}
-	\caption{The flow chart of the reconstruction}
-	\label{fig:1}
-	
-\end{figure}
+    \begin{equation}
+        \numberwithin{equation}{section}
+        p(t) =  \frac{\tau_r+\tau_d}{\tau_d^2} \exp (-\frac{(t-t_0)}{\tau_d})(1-\exp(-\frac{t-t_0}{\tau_r})) (t > t_0)
+    \end{equation}
 
-\subsection{Initial guess of the $\tau_0$ and $\Theta_0$}
-\par 1. In 0-th iteration, we first use the pe information to estimate a rough result including the energy and vertex. 
-\par 2. Initial guess of vertex and energy. We begin with the vertex using weighted average. 
-
-	\begin{equation}
-		\numberwithin{equation}{section}
-		\vec{x}_{ini} = \frac{\sum_{i=1}^N n_i\vec{x}_i}{\sum_{i=1}^N n_i}
-	\end{equation}
-
-\par 3. Initial guess of  time profile
-	Then using the time data reconstruct the time profile by
-
-	\begin{equation}
-		\numberwithin{equation}{section}
-		p(t) =  \frac{\tau_r+\tau_d}{\tau_d^2} \exp (-\frac{(t-t_0)}{\tau_d})(1-\exp(-\frac{t-t_0}{\tau_r})) (t > t_0)
-	\end{equation}
-
-	\begin{equation}
-		\numberwithin{equation}{section}
-		\tau_d = \arg_{\tau_d}\max{\sum_i \log p_i(t)}
-	\end{equation}
+    \begin{equation}
+        \numberwithin{equation}{section}
+        \tau_d = \arg_{\tau_d}\max{\sum_i \log p_i(t)}
+    \end{equation}
 
 \subsection{M-step to find the best fit vertex and $\tau_d$}
 	
